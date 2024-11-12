@@ -3,3 +3,5 @@
 secret.txt
 secrets.json
 cypress/
+node_modules
+logs/
