@@ -1,0 +1,5 @@
+.DS_Store
+.idea/
+secret.txt
+secrets.json
+cypress/
