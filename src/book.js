@@ -10,7 +10,7 @@ const log = (str) => {
 }
 
 log('script started');
-const browser = await puppeteer.launch();
+const browser = await puppeteer.launch({ headless: true });
 const page = await browser.newPage();
 page.setDefaultTimeout(180000);
 await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
@@ -139,7 +139,7 @@ const code = await getLatestCode(emailAccessToken);
 
 
 // keep trying every second in case of issues
-page.setDefaultTimeout(1000);
+page.setDefaultTimeout(10000);
 // type code
 for (let i = 0; i < 100; i++) {
   try {

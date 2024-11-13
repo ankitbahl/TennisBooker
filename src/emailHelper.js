@@ -1,8 +1,9 @@
 import axios from 'axios';
 import fs from 'fs';
+import * as os from "node:os";
 const OAUTH_HOST = "https://oauth2.googleapis.com";
 const API_HOST = "https://gmail.googleapis.com";
-export const secrets = JSON.parse(fs.readFileSync('/home/jellyfin/workspace/TennisBooker/secrets.json', 'utf8'));
+export const secrets = JSON.parse(fs.readFileSync(`${os.homedir}/workspace/TennisBooker/secrets.json`, 'utf8'));
 
 export const getAccessToken = async () => {
   const url = new URL(OAUTH_HOST);
