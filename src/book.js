@@ -1,11 +1,14 @@
 import puppeteer from 'puppeteer'
+import { getAccessToken, getLatestCode } from "./emailHelper.js";
+import { secrets } from "./emailHelper.js";
+import { writeFileSync, existsSync, rmSync } from 'fs';
+import { homedir } from "node:os";
+
 const log = (str) => {
   const date = new Date();
   console.log(`${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} - ${str}`);
 }
-import { getAccessToken, getLatestCode } from "./emailHelper.js";
-import fs from "fs";
-const secrets = JSON.parse(fs.readFileSync('/home/jellyfin/workspace/TennisBooker/secrets.json', 'utf8'));
+
 log('script started');
 const browser = await puppeteer.launch();
 const page = await browser.newPage();
@@ -66,9 +69,9 @@ for(let i = 0; true; i++) {
   }
 
   const now = new Date();
-  if (false && now.getMinutes() > 4 && now.getMinutes() < 50) {
+  if (now.getMinutes() > 4 && now.getMinutes() < 50) {
     log("it's too late, terminating");
-    throw new Error(`Couldn't find time within ${i} attempts`);
+    process.exit(0);
   } else if (now.getMinutes() > 58 && now.getSeconds() > 55) {
     await new Promise(res => setTimeout(res, 500));
   } else {
@@ -80,6 +83,26 @@ for(let i = 0; true; i++) {
     location.reload();
   });
 }
+
+// create semaphore via file creation
+const fileName = `${homedir}/workspace/TennisBooker/temp/${court}_${date}_${time}`;
+
+// another process has already got to this point, no need to continue
+if (existsSync(fileName)) {
+  log('another process has already started the booking process, terminating');
+  process.exit(0);
+} else {
+  try {
+    writeFileSync(fileName, '');
+  } catch (e) {
+    log('failed to create file, terminating');
+    console.error(e);
+    process.exit(1);
+  }
+}
+
+// delete file
+rmSync(fileName);
 
 // click on time you want
 await page.locator(`text/${time}`).click();
