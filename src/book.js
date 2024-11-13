@@ -137,9 +137,30 @@ await new Promise(res => setTimeout(res, 2000));
 const emailAccessToken = await getAccessToken();
 const code = await getLatestCode(emailAccessToken);
 
+
+// keep trying every second in case of issues
+page.setDefaultTimeout(1000);
 // type code
-await page.type('input[id="totp"]', code);
-await page.locator('text/Confirm').click();
+for (let i = 0; i < 100; i++) {
+  try {
+    log('entering code');
+    await page.type('input[id="totp"]', code);
+    break;
+  } catch (e) {
+    // ignore and try again
+  }
+}
+
+for (let i = 0; i < 100; i++) {
+  try {
+    log('confirming');
+    await page.locator('text/Confirm').click();
+    break;
+  } catch (e) {
+    // keep trying
+  }
+}
+
 // if we don't get it wil say "Court already reserved at this time"
 // if we do it will say You're all set!
 try {
