@@ -10,11 +10,12 @@ const log = (str) => {
 }
 
 log('script started');
-const browser = await puppeteer.launch({ headless: true });
+const browserType = Math.random() > 0.5 ? 'firefox' : 'chrome';
+const browser = await puppeteer.launch({ headless: true, browser: browserType });
 const page = await browser.newPage();
 page.setDefaultTimeout(180000);
 await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
-log('browser started');
+log(`${browserType} started`);
 await page.goto("https://www.rec.us/sfrecpark");
 await page.setViewport({width: 1920, height: 1080});
 log('on main page');
