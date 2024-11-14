@@ -158,13 +158,18 @@ try {
     }
   }
 
-  for (let i = 0; i < 100; i++) {
+  const numTries = 10;
+  for (let i = 0; i < numTries; i++) {
     try {
       log('confirming');
       await page.locator('text/Confirm').click();
       break;
     } catch (e) {
       // keep trying
+
+      if (i === numTries - 1) {
+        throw new Error("Couldn't enter code")
+      }
     }
   }
 
