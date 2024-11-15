@@ -16,7 +16,6 @@ const browserType = 'firefox';
 for(let i = 0; i < 100; i++) {
   browser = await puppeteer.launch({ headless: true, browser: browserType });
   page = await browser.newPage();
-  page.setDefaultTimeout(180000);
   await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
 
   try {
@@ -27,7 +26,7 @@ for(let i = 0; i < 100; i++) {
     const today = new Date();
     let numDaysAdvance;
     let nextMonth = false;
-    if (today.getHours() === 7) {
+    if (today.getHours() === 7 || today.getHours() === 8) {
       // morning booking is for 7 days in advance
       numDaysAdvance = 7;
     } else if (today.getHours() === 11) {
@@ -55,6 +54,7 @@ for(let i = 0; i < 100; i++) {
 // navigate to court
     await page.locator(`text/${court}`).click();
     log(`on page for ${court}`);
+    page.setDefaultTimeout(10000);
 // wait for time to be available
     for(let i = 0; true; i++) {
       // click on date selector
