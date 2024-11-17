@@ -159,19 +159,14 @@ for(let i = 0; i < 100; i++) {
       }
     }
 
-    const numTries = 10;
-    for (let i = 0; i < numTries; i++) {
-      try {
-        log('confirming');
+    page.setDefaultTimeout(180000);
+    log('confirming with 3 min timeout');
+    try {
         await page.locator('text/Confirm').click();
-        break;
-      } catch (e) {
-        // keep trying
-
-        if (i === numTries - 1) {
-          throw new Error("Couldn't enter code")
-        }
-      }
+    } catch (e) {
+      // keep trying
+      log("couldn't click confirm somehow");
+      throw new Error(e);
     }
 
     // if we don't get it wil say "Court already reserved at this time"
