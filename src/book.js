@@ -29,7 +29,7 @@ for(let i = 0; i < 100; i++) {
     if (today.getHours() === 7 || today.getHours() === 8) {
       // morning booking is for 7 days in advance
       numDaysAdvance = 7;
-    } else if (today.getHours() === 11) {
+    } else if (today.getHours() === 11 || today.getHours() === 12) {
       numDaysAdvance = 2;
     } else {
       numDaysAdvance = 1;
