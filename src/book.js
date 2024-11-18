@@ -14,7 +14,7 @@ let browser;
 let page;
 const browserType = 'firefox';
 for(let i = 0; i < 100; i++) {
-  browser = await puppeteer.launch({ headless: true, browser: browserType });
+  browser = await puppeteer.launch({ headless: false, browser: browserType });
   page = await browser.newPage();
   await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
 
@@ -78,7 +78,7 @@ for(let i = 0; i < 100; i++) {
       if (now.getMinutes() > 4 && now.getMinutes() < 50) {
         log("it's too late, terminating");
         process.exit(0);
-      } else if (now.getMinutes() > 58 && now.getSeconds() > 55) {
+      } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
         log('waiting 0.5s')
         await new Promise(res => setTimeout(res, 500));
       } else {
