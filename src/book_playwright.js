@@ -62,7 +62,7 @@ for(let i = 0; i < 100; i++) {
             await page.locator('input').click();
 
             // click day you want in month
-            await page.locator(`.react-datepicker__day--0${date}`).click();
+            await page.locator(`.react-datepicker__day--0${date}`).last().click();
             log('checking available times');
             // check available days for logging
             const times = await (await page.getByText('Tennis')).evaluate(el =>  el.parentElement.innerText);
