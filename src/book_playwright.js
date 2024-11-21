@@ -13,7 +13,7 @@ log('script started');
 let browser;
 let page;
 const browserType = 'chrome';
-for(let i = 0; i < 100; i++) {
+for(let i = 0; i < 5; i++) {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
