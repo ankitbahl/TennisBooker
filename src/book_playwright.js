@@ -36,18 +36,27 @@ for(let i = 0; i < 5; i++) {
         } else {
             numDaysAdvance = 1;
         }
-        let date = new Date();
-        date.setDate(today.getDate() + numDaysAdvance);
-        if (date.getMonth() !== today.getMonth()) {
+        let bookDate = new Date();
+        bookDate.setDate(today.getDate() + numDaysAdvance);
+        if (bookDate.getMonth() !== today.getMonth()) {
             nextMonth = true;
         }
-        const bookingFilePath = `${bookingsDir}/${date.getMonth() + 1}-${date.getDate()}.txt`;
-        date = date.getDate();
+        const bookingFilePath = `${bookingsDir}/${bookDate.getMonth() + 1}-${bookDate.getDate()}.txt`;
         if (existsSync(bookingFilePath)) {
-            log(`found booking for ${date} already for ${readFileSync(bookingFilePath)}`);
+            log(`found booking for ${bookDate.getDate()} already for ${readFileSync(bookingFilePath)}`);
+            process.exit(0);
+        }
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const daysToBook = ['tuesday', 'friday', 'sunday'].map( (weekday) => {
+            return days.indexOf(weekday);
+        });
+
+        if (!daysToBook.includes(bookDate.getDay())) {
+            log('No booking will be made today, as its not one of the days to book.');
             process.exit(0);
         }
 
+        const date = bookDate.getDate();
         const time = '4:00 PM';
         const court = 'Dolores';
 
