@@ -61,6 +61,9 @@ for(let i = 0; i < 100; i++) {
             // click on date selector
             await page.locator('input').click();
 
+            if (nextMonth) {
+                await page.locator('img[alt="right"]').click();
+            }
             // click day you want in month
             await page.locator(`.react-datepicker__day--0${date}`).last().click();
             log('checking available times');
