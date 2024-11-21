@@ -1,7 +1,7 @@
-import {chromium, devices} from 'playwright';
+import {chromium} from 'playwright';
 import { getAccessToken, getLatestCode } from "./emailHelper.js";
 import { secrets } from "./emailHelper.js";
-import { writeFileSync, existsSync, rmSync } from 'fs';
+import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs';
 import { homedir } from "node:os";
 
 const log = (str) => {
@@ -9,9 +9,10 @@ const log = (str) => {
     console.log(`${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} - ${str}`);
 }
 
+// the week starts with monday, max of 3 bookings per week
+
+const bookingsDir = `${homedir}/workspace/TennisBooker/bookings`;
 log('script started');
-let browser;
-let page;
 const browserType = 'chrome';
 for(let i = 0; i < 5; i++) {
     const browser = await chromium.launch();
@@ -40,7 +41,12 @@ for(let i = 0; i < 5; i++) {
         if (date.getMonth() !== today.getMonth()) {
             nextMonth = true;
         }
+        const bookingFilePath = `${bookingsDir}/${date.getMonth() + 1}-${date.getDate()}.txt`;
         date = date.getDate();
+        if (existsSync(bookingFilePath)) {
+            log(`found booking for ${date} already for ${readFileSync(bookingFilePath)}`);
+            process.exit(0);
+        }
 
         const time = '4:00 PM';
         const court = 'Dolores';
@@ -162,6 +168,7 @@ for(let i = 0; i < 5; i++) {
             await page.getByText('Confirm').last().click();
         } catch (e) {
             // keep trying
+
             log("couldn't click confirm somehow");
             throw new Error(e);
         }
@@ -171,8 +178,12 @@ for(let i = 0; i < 5; i++) {
         try {
             await page.waitForSelector("text=You're all set!");
             log('success!, terminating');
+
+            // make a file for the booking
+            writeFileSync(bookingFilePath, `${court}: ${time}`);
             process.exit(0);
         } catch(e) {
+            console.error(e);
             log('script was too late to book :(, terminating');
             process.exit(1);
         }
