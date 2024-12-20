@@ -1,9 +1,11 @@
 import {chromium} from 'playwright';
 import { getAccessToken, getLatestCode } from "./emailHelper.js";
-import { secrets } from "./emailHelper.js";
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const { email, password, participant_name } = require('../secrets.json');
 import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs';
 import { homedir } from "node:os";
-import {DBHelper, getToken} from "./db_helper.js";
+import { DBHelper, getToken } from "./db_helper.js";
 
 const log = (str) => {
     const date = new Date();
@@ -19,7 +21,7 @@ const browserType = 'chrome';
 console.log('initializing redis connection');
 await DBHelper.initializeDBConnection();
 
-const refreshToken = await getToken(secrets.email);
+const refreshToken = await getToken(email);
 
 for(let i = 0; i < 5; i++) {
     const browser = await chromium.launch({headless: false});
@@ -64,14 +66,14 @@ for(let i = 0; i < 5; i++) {
         }
 
         const date = bookDate.getDate();
-        const time = '4:00 PM';
+        const time = '4:30 PM';
         const court = 'Dolores';
 
         log(`trying to get ${time} slot on the ${date} for ${court}`);
 // login
         await page.getByText('Log In').click();
-        await page.type('input[id="email"]', secrets.email);
-        await page.type('input[id="password"]', secrets.password);
+        await page.type('input[id="email"]', email);
+        await page.type('input[id="password"]', password);
         await page.getByText('log in & continue').click();
         log('logged in');
 // navigate to court
@@ -159,7 +161,7 @@ for(let i = 0; i < 5; i++) {
 
         await page.getByText('Select participant').click();
 
-        await page.getByText(secrets.participant_name).click();
+        await page.getByText(participant_name).click();
 
 // click book
         await page.locator('button.max-w-max').click();

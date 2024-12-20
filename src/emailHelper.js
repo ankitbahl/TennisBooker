@@ -1,15 +1,16 @@
 import axios from 'axios';
-import fs from 'fs';
-import * as os from "node:os";
 const OAUTH_HOST = "https://oauth2.googleapis.com";
 const API_HOST = "https://gmail.googleapis.com";
-export const secrets = JSON.parse(fs.readFileSync(`${os.homedir}/workspace/TennisBooker/secrets.json`, 'utf8'));
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+
+const { client_secret, client_id, email } = require('../secrets.json');
 
 export const getAccessToken = async (refreshToken) => {
   const url = new URL(OAUTH_HOST);
   url.pathname = "/token";
-  url.searchParams.append("client_secret", secrets.client_secret);
-  url.searchParams.append("client_id", secrets.client_id);
+  url.searchParams.append("client_secret", client_secret);
+  url.searchParams.append("client_id", client_id);
   url.searchParams.append("grant_type", "refresh_token");
   url.searchParams.append("refresh_token", refreshToken);
 
@@ -18,14 +19,14 @@ export const getAccessToken = async (refreshToken) => {
 
 const getCurrentThreads = async (accessToken) => {
   const url = new URL(API_HOST);
-  url.pathname = `/gmail/v1/users/${secrets.email}/threads`;
+  url.pathname = `/gmail/v1/users/${email}/threads`;
   const res = await axios.get(url.toString(), {headers: {Authorization: `Bearer ${accessToken}`}});
   return res.data;
 }
 
 const deleteEmail = async (accessToken, threadId) => {
   const url = new URL(API_HOST);
-  url.pathname = `/gmail/v1/users/${secrets.email}/threads/${threadId}`;
+  url.pathname = `/gmail/v1/users/${email}/threads/${threadId}`;
   const res = await axios.delete(url.toString(), {headers: {Authorization: `Bearer ${accessToken}`}});
   console.log(res.data);
   return res;
@@ -52,7 +53,5 @@ export const getLatestCode = async (accessToken) => {
   return snippet.match(/Your REC verification code is: (\d*)/)[1];
 }
 
-// const code = await getAccessToken();
-// console.log(await getLatestCode(code));
-// const accessToken = await getAccessToken(secrets);
+// const accessToken = await getAccessToken("1//0668qyThd9zQPCgYIARAAGAYSNwF-L9IrHb9d30pRABMtKUYrYD2mts7Km7TcDoQT8AF38rOwoshxT8A3xFYsfLdsndCEA2-H-dA");
 // console.log(await getCurrentThreads(accessToken));
