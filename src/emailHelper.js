@@ -53,5 +53,5 @@ export const getLatestCode = async (accessToken) => {
   return snippet.match(/Your REC verification code is: (\d*)/)[1];
 }
 
-// const accessToken = await getAccessToken("1//0668qyThd9zQPCgYIARAAGAYSNwF-L9IrHb9d30pRABMtKUYrYD2mts7Km7TcDoQT8AF38rOwoshxT8A3xFYsfLdsndCEA2-H-dA");
+// const accessToken = await getAccessToken("accessTOKENDONOTCOMMIT");
 // console.log(await getCurrentThreads(accessToken));
