@@ -5,13 +5,13 @@ const OAUTH_HOST = "https://oauth2.googleapis.com";
 const API_HOST = "https://gmail.googleapis.com";
 export const secrets = JSON.parse(fs.readFileSync(`${os.homedir}/workspace/TennisBooker/secrets.json`, 'utf8'));
 
-export const getAccessToken = async () => {
+export const getAccessToken = async (refreshToken) => {
   const url = new URL(OAUTH_HOST);
   url.pathname = "/token";
   url.searchParams.append("client_secret", secrets.client_secret);
   url.searchParams.append("client_id", secrets.client_id);
   url.searchParams.append("grant_type", "refresh_token");
-  url.searchParams.append("refresh_token", secrets.refresh_token);
+  url.searchParams.append("refresh_token", refreshToken);
 
   return (await axios.post(url.toString())).data.access_token;
 }
