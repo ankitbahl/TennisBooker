@@ -38,3 +38,15 @@ export class DBHelper {
 export const getToken = async (email) => {
   return (JSON.parse(await DBHelper.redisClient.get(email) || "{}")).refresh_token;
 }
+
+export const getUsers = async () => {
+  return (JSON.parse(await DBHelper.redisClient.get('booking_users')));
+}
+
+export const getRecPassword = async (email) => {
+  return (await DBHelper.redisClient.get(`${email}_rec_password`));
+}
+
+export const getDefaultWeekBookings = async (email) => {
+  return (JSON.parse(await DBHelper.redisClient.get('default_week_bookings'))[email])
+}
