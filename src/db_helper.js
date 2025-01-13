@@ -43,6 +43,9 @@ export const getUsers = async () => {
   return (JSON.parse(await DBHelper.redisClient.get('booking_users')));
 }
 
+export const getRecEmail = async (email) => {
+  return (await DBHelper.redisClient.get(`${email}_rec_email`))
+}
 export const getRecPassword = async (email) => {
   return (await DBHelper.redisClient.get(`${email}_rec_password`));
 }
