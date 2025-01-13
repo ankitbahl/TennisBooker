@@ -179,7 +179,7 @@ async function bookCourt(email) {
 // wait a few secs for email to come in
             await new Promise(res => setTimeout(res, 2000));
             const emailAccessToken = await getAccessToken(refreshToken);
-            const code = await getLatestCode(emailAccessToken);
+            const code = await getLatestCode(emailAccessToken, email);
 
 
 // keep trying every second in case of issues
