@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es2022",                     // Specifies the target JavaScript version (ES5 is a common choice for broader compatibility)
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,                       // Enables all strict type-checking options (recommended for type safety)
+    "esModuleInterop": true,              // Allows for default import compatibility with non-ESModule modules
+    "skipLibCheck": true,                 // Skips type checking of declaration files (speeds up compilation)
+    "forceConsistentCasingInFileNames": true, // Ensures that file names are case-sensitive across the project
+    "outDir": "./build",                   // Specifies the output directory for the compiled JavaScript files
+    "rootDir": "./",                   // Specifies the root directory of your TypeScript files
+    "lib": ["es6", "dom"],                 // Includes the necessary libraries for your project (ES6 and DOM for browser environments)
+    "jsx": "react"
+  },
+  "include": [
+    "src/**/*.ts",
+    "server.ts"
+  ],
+  "exclude": [
+    "node_modules"                        // Excludes the `node_modules` directory from compilation
+  ]
+}

@@ -1,4 +1,4 @@
-import { createClient } from 'redis';
+import {createClient, RedisClientType, RedisDefaultModules, RedisFunctions, RedisModules, RedisScripts} from 'redis';
 import { lookup } from 'dns';
 
 const isDocker = async () => {
@@ -16,12 +16,12 @@ const isDocker = async () => {
 }
 
 export class DBHelper {
-  static redisClient;
-  constructor(redisClient) {
+  static redisClient: RedisClientType<RedisDefaultModules & RedisModules, RedisFunctions, RedisScripts>;
+  constructor(redisClient: RedisClientType) {
     DBHelper.redisClient = redisClient;
   }
   static async initializeDBConnection() {
-    const options = {};
+    const options: {socket?: { host?: string, port: number }} = {};
     if (await isDocker()) {
       options.socket = { host: 'host.docker.internal', port: 6378 };
     } else {
@@ -35,21 +35,21 @@ export class DBHelper {
   }
 }
 
-export const getToken = async (email) => {
+export const getToken = async (email: string) => {
   return (JSON.parse(await DBHelper.redisClient.get(email) || "{}")).refresh_token;
 }
 
-export const getUsers = async () => {
-  return (JSON.parse(await DBHelper.redisClient.get('booking_users')));
+export const getUsers = async (): Promise<string[]> => {
+  return (JSON.parse(await DBHelper.redisClient.get('booking_users') || "{}"));
 }
 
-export const getRecEmail = async (email) => {
+export const getRecEmail = async (email: string) => {
   return (await DBHelper.redisClient.get(`${email}_rec_email`))
 }
-export const getRecPassword = async (email) => {
+export const getRecPassword = async (email: string) => {
   return (await DBHelper.redisClient.get(`${email}_rec_password`));
 }
 
-export const getDefaultWeekBookings = async (email) => {
-  return (JSON.parse(await DBHelper.redisClient.get('default_week_bookings'))[email])
+export const getDefaultWeekBookings = async (email: string): Promise<{day: string, court: string, time: string}[]> => {
+  return (JSON.parse(await DBHelper.redisClient.get('default_week_bookings') || "{}")[email])
 }

@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 
 const { client_secret, client_id } = require('../secrets.json');
 
-export const getAccessToken = async (refreshToken) => {
+export const getAccessToken = async (refreshToken: string) => {
   const url = new URL(OAUTH_HOST);
   url.pathname = "/token";
   url.searchParams.append("client_secret", client_secret);
@@ -17,14 +17,14 @@ export const getAccessToken = async (refreshToken) => {
   return (await axios.post(url.toString())).data.access_token;
 }
 
-const getCurrentThreads = async (accessToken, email) => {
+const getCurrentThreads = async (accessToken: string, email: string) => {
   const url = new URL(API_HOST);
   url.pathname = `/gmail/v1/users/${email}/threads`;
   const res = await axios.get(url.toString(), {headers: {Authorization: `Bearer ${accessToken}`}});
   return res.data;
 }
 
-const deleteEmail = async (accessToken, threadId, email) => {
+const deleteEmail = async (accessToken: string, threadId: string, email: string) => {
   const url = new URL(API_HOST);
   url.pathname = `/gmail/v1/users/${email}/threads/${threadId}`;
   const res = await axios.delete(url.toString(), {headers: {Authorization: `Bearer ${accessToken}`}});
@@ -32,7 +32,7 @@ const deleteEmail = async (accessToken, threadId, email) => {
   return res;
 };
 
-export const getLatestCode = async (accessToken, email) => {
+export const getLatestCode = async (accessToken: string, email: string) => {
   let emailFound = false;
   let snippet;
   for (let n = 0; !emailFound; n++) {

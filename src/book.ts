@@ -4,7 +4,7 @@ import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs';
 import { homedir } from "node:os";
 import { DBHelper, getDefaultWeekBookings, getRecEmail, getRecPassword, getToken, getUsers } from "./db_helper.js";
 
-const log = (str, email) => {
+const log = (str: string, email: string) => {
     const date = new Date();
     console.log(`${email}:${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} - ${str}`);
 }
@@ -21,12 +21,16 @@ await DBHelper.initializeDBConnection();
 
 
 const emails = await getUsers();
-async function bookCourt(email) {
+async function bookCourt(email: string) {
     const refreshToken = await getToken(email);
     const defaultWeekBookings = await getDefaultWeekBookings(email);
     const recEmail = await getRecEmail(email);
     const password = await getRecPassword(email);
 
+    if (!recEmail || !password) {
+        log('No rec email or password found in db, terminating', email);
+        return 1;
+    }
 
     for (let i = 0; i < 5; i++) {
         const browser = await chromium.launch({headless: true});
@@ -74,21 +78,28 @@ async function bookCourt(email) {
 
             const date = bookDate.getDate();
             const weekBooking = defaultWeekBookings.find(defaultWeekBooking => defaultWeekBooking.day === days[bookDate.getDay()]);
+            if (!weekBooking) {
+                log('Week booking was undefined?', email);
+                return 1;
+            }
             const time = weekBooking.time;
             const court = weekBooking.court;
 
             log(`trying to get ${time} slot on the ${date} for ${court}`, email);
-// login
+
+            // login
             await page.getByText('Log In').click();
             await page.type('input[id="email"]', recEmail);
             await page.type('input[id="password"]', password);
             await page.getByText('log in & continue').click();
             log('logged in', email);
-// navigate to court
+
+            // navigate to court
             await page.getByText(court).click();
             log(`on page for ${court}`, email);
             // page.setDefaultTimeout(10000);
-// wait for time to be available
+
+            // wait for time to be available
             for (let i = 0; true; i++) {
                 // click on date selector
                 await page.locator('input').click();
@@ -100,7 +111,7 @@ async function bookCourt(email) {
                 await page.locator(`.react-datepicker__day--0${date < 10 ? '0' : ''}${date}`).last().click();
                 log('checking available times', email);
                 // check available days for logging
-                const times = await (await page.getByText('Tennis')).evaluate(el => el.parentElement.innerText);
+                const times = await (await page.getByText('Tennis')).evaluate(el => (el.parentElement as HTMLElement).innerText);
                 if (times.length === 0) {
                     log('no times available', email);
                 } else if (times.includes(time)) {
@@ -115,7 +126,7 @@ async function bookCourt(email) {
                     log("it's too late, terminating", email);
                     return 0;
                 } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
-                    log('waiting 0.5s, email')
+                    log('waiting 0.5s, email', email)
                     await new Promise(res => setTimeout(res, 500));
                 } else {
                     log('waiting 10s', email);
@@ -128,10 +139,10 @@ async function bookCourt(email) {
                 log('done refresh', email);
             }
 
-// create semaphore via file creation
+            // create semaphore via file creation
             const fileName = `${homedir}/workspace/TennisBooker/temp/${court}_${date}_${time}`;
 
-// another process has already got to this point, no need to continue
+            // another process has already got to this point, no need to continue
             if (existsSync(fileName)) {
                 log('another process has already started the booking process, terminating', email);
                 return 0;
@@ -145,24 +156,23 @@ async function bookCourt(email) {
                 }
             }
 
-// delete file
+            // delete file
             rmSync(fileName);
 
-// click on time you want
+            // click on time you want
             await page.getByText(time).click();
 
-// click on button under duration to select duration
+            // click on button under duration to select duration
             await page.locator(`xpath=//label[text()='Duration']/following-sibling::button`).click();
 
-// try to click each one to get the longest time
+            // try to click each one to get the longest time
             const durations = ['2 hours', '90 min', '1 hour', '30 min']
 
-
-// wait for load
+            // wait for load
             await page.waitForSelector('text=2 hours');
 
-// get first unavailable duration to find longest duration possible
-            const firstUnavailableDuration = await page.locator('div[role="option"][aria-disabled="true"]').first().evaluate(e => e.innerText);
+            // get first unavailable duration to find longest duration possible
+            const firstUnavailableDuration = await page.locator('div[role="option"][aria-disabled="true"]').first().evaluate(e => (e as HTMLElement).innerText);
             const longestAvailableDuration = durations[durations.indexOf(firstUnavailableDuration) + 1];
 
             await page.getByText(longestAvailableDuration).first().click();
@@ -171,20 +181,20 @@ async function bookCourt(email) {
 
             await page.getByText('Account Owner').click();
 
-// click book
+            // click book
             await page.locator('button.max-w-max').click();
 
             await page.getByText('Send Code').click();
             log('sending code', email);
-// wait a few secs for email to come in
+            // wait a few secs for email to come in
             await new Promise(res => setTimeout(res, 2000));
             const emailAccessToken = await getAccessToken(refreshToken);
             const code = await getLatestCode(emailAccessToken, email);
 
 
-// keep trying every second in case of issues
-//         page.setDefaultTimeout(10000);
-// type code
+            // keep trying every second in case of issues
+            //         page.setDefaultTimeout(10000);
+            // type code
             log('entering code', email);
             await page.type('input[id="totp"]', code);
 
@@ -196,7 +206,7 @@ async function bookCourt(email) {
                 // keep trying
 
                 log("couldn't click confirm somehow", email);
-                throw new Error(e);
+                throw new Error(e as string);
             }
 
             // if we don't get it wil say "Court already reserved at this time"
