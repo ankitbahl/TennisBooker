@@ -111,7 +111,7 @@ async function bookCourt(email: string) {
                 await page.locator(`.react-datepicker__day--0${date < 10 ? '0' : ''}${date}`).last().click();
                 log('checking available times', email);
                 // check available days for logging
-                const times = await (await page.getByText('Tennis')).evaluate(el => (el.parentElement as HTMLElement).innerText);
+                const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
                 if (times.length === 0) {
                     log('no times available', email);
                 } else if (times.includes(time)) {
@@ -171,9 +171,15 @@ async function bookCourt(email: string) {
             // wait for load
             await page.waitForSelector('text=2 hours');
 
-            // get first unavailable duration to find longest duration possible
-            const firstUnavailableDuration = await page.locator('div[role="option"][aria-disabled="true"]').first().evaluate(e => (e as HTMLElement).innerText);
-            const longestAvailableDuration = durations[durations.indexOf(firstUnavailableDuration) + 1];
+            // find longest available duration
+            let longestAvailableDuration = '';
+            for (let i = 3; i >= 0; i--) {
+                const isDisabled = await page.locator('div[role="option"]').nth(i).evaluate(e => e.getAttribute('aria-disabled'))
+
+                if (isDisabled === null) {
+                    longestAvailableDuration = await page.locator('div[role="option"]').nth(i).evaluate((e: HTMLElement) => e.innerText)
+                }
+            }
 
             await page.getByText(longestAvailableDuration).first().click();
 
