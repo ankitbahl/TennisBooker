@@ -122,7 +122,7 @@ async function bookCourt(email: string) {
                 }
 
                 const now = new Date();
-                if (now.getMinutes() > 4 && now.getMinutes() < 50) {
+                if (now.getMinutes() > 2 && now.getMinutes() < 50) {
                     log("it's too late, terminating", email);
                     return 0;
                 } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
