@@ -204,7 +204,7 @@ async function bookCourt(email: string) {
             log('entering code', email);
             await page.type('input[id="totp"]', code);
 
-            // page.setDefaultTimeout(180000);
+            page.setDefaultTimeout(180000);
             log('confirming with 3 min timeout', email);
             try {
                 await page.getByText('Confirm').last().click();
