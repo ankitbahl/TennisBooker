@@ -34,7 +34,11 @@ async function bookCourt(email: string) {
 
     for (let i = 0; i < 5; i++) {
         const browser = await chromium.launch({headless: true});
-        const context = await browser.newContext();
+        const context = await browser.newContext({
+            recordVideo: {
+                dir: 'videos/'
+            }
+        });
         const page = await context.newPage();
         // await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
 
