@@ -3,6 +3,7 @@ import { getAccessToken, getLatestCode } from "./emailHelper.js";
 import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs';
 import { homedir } from "node:os";
 import { DBHelper, getDefaultWeekBookings, getRecEmail, getRecPassword, getToken, getUsers } from "./db_helper.js";
+import * as fs from "node:fs";
 
 const log = (str: string, email: string) => {
     const date = new Date();
@@ -32,7 +33,7 @@ async function bookCourt(email: string) {
         return 1;
     }
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 2; i++) {
         const browser = await chromium.launch({headless: true});
         const context = await browser.newContext({
             recordVideo: {
@@ -130,8 +131,8 @@ async function bookCourt(email: string) {
                     log("it's too late, terminating", email);
                     return 0;
                 } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
-                    log('waiting 0.5s, email', email)
-                    await new Promise(res => setTimeout(res, 500));
+                    log('waiting 0s', email);
+                    await new Promise(res => setTimeout(res, 0));
                 } else {
                     log('waiting 10s', email);
                     await new Promise(res => setTimeout(res, 10000));
@@ -243,6 +244,11 @@ async function bookCourt(email: string) {
             }
         } finally {
             await browser.close();
+            const videoFile = fs.readdirSync('videos/').find(file => file.endsWith('.webm') && !file.includes('attempt'));
+            if (videoFile) {
+                const today = new Date();
+                fs.renameSync(`videos/${videoFile}`, `videos/${recEmail}_${today.getMonth()}-${today.getDate()}_${today.getHours()}_attempt${i}.webm`);
+            }
         }
     }
 }
