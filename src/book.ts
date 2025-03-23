@@ -22,7 +22,6 @@ await DBHelper.initializeDBConnection();
 async function preGenerateCode(page: Page, recEmail: string, email: string, password: string, refreshToken: string): Promise<string | null> {
     const unpopularCourts = ['DuPont', 'McLaren'];
     const date = new Date();
-    let nextMonth = false;
     for (let i = 0; i < unpopularCourts.length; i++) {
         const court = unpopularCourts[i];
         await page.getByText(court).click();
@@ -43,6 +42,7 @@ async function preGenerateCode(page: Page, recEmail: string, email: string, pass
 
             // go to next date
             date.setDate(date.getDate() + 1);
+            let nextMonth = false;
             if (date.getDate() === 1) {
                 nextMonth = true;
             }
