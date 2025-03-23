@@ -176,8 +176,8 @@ async function bookCourt(email: string) {
                     log("it's too late, terminating", email);
                     return 0;
                 } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
-                    log('waiting 0s', email);
-                    await new Promise(res => setTimeout(res, 0));
+                    log('waiting 0.5s', email);
+                    await new Promise(res => setTimeout(res, 500));
                 } else {
                     log('waiting 10s', email);
                     await new Promise(res => setTimeout(res, 10000));
