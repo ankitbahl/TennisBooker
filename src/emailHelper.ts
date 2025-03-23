@@ -53,5 +53,15 @@ export const getLatestCode = async (accessToken: string, email: string) => {
   return snippet.match(/Your REC verification code is: (\d*)/)[1];
 }
 
+export const deleteCodeEmail = async (accessToken: string, email: string) => {
+  const threads = (await getCurrentThreads(accessToken, email)).threads;
+  for (let i = 0; i < threads.length; i++) {
+    if (threads[i].snippet.includes("Your REC verification code is: ")) {
+      await deleteEmail(accessToken, threads[i].id, email);
+      break;
+    }
+  }
+}
+
 // const accessToken = await getAccessToken("accessTOKENDONOTCOMMIT");
 // console.log(await getCurrentThreads(accessToken));

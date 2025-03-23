@@ -1,8 +1,8 @@
-import {chromium} from 'playwright';
-import { getAccessToken, getLatestCode } from "./emailHelper.js";
-import { writeFileSync, existsSync, rmSync, readFileSync } from 'fs';
-import { homedir } from "node:os";
-import { DBHelper, getDefaultWeekBookings, getRecEmail, getRecPassword, getToken, getUsers } from "./db_helper.js";
+import {chromium, Page} from 'playwright';
+import {deleteCodeEmail, getAccessToken, getLatestCode} from "./emailHelper.js";
+import {existsSync, readFileSync, rmSync, writeFileSync} from 'fs';
+import {homedir} from "node:os";
+import {DBHelper, getDefaultWeekBookings, getRecEmail, getRecPassword, getToken, getUsers} from "./db_helper.js";
 import * as fs from "node:fs";
 
 const log = (str: string, email: string) => {
@@ -19,7 +19,46 @@ const browserType = 'chrome';
 console.log('initializing redis connection');
 await DBHelper.initializeDBConnection();
 
+async function preGenerateCode(page: Page, recEmail: string, email: string, password: string, refreshToken: string): Promise<string | null> {
+    const unpopularCourts = ['DuPont', 'McLaren'];
+    const date = new Date();
+    let nextMonth = false;
+    for (let i = 0; i < unpopularCourts.length; i++) {
+        const court = unpopularCourts[i];
+        await page.getByText(court).click();
+        for (let j = 1; j < 7; j++) {
+            const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
+            if (times.includes(':')) {
+                const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
+                await page.getByText(time as string).click();
+                await page.getByText('Select participant').click();
+                await page.getByText('Account Owner').click();
+                await page.locator('button.max-w-max').click();
+                await page.getByText('Send Code').click();
 
+                // wait a few secs for email to come in
+                const emailAccessToken = await getAccessToken(refreshToken);
+                return await getLatestCode(emailAccessToken, email) as string;
+            }
+
+            // go to next date
+            date.setDate(date.getDate() + 1);
+            if (date.getDate() === 1) {
+                nextMonth = true;
+            }
+
+            // click day you want in month, pad with 0 if one digit day
+            await new Promise(res => setTimeout(res, 1000));
+            await page.locator('input').click();
+            if (nextMonth) {
+                await page.locator('img[alt="right"]').click();
+            }
+            await page.locator(`.react-datepicker__day--0${date.getDate() < 10 ? '0' : ''}${date.getDate()}:not(.react-datepicker__day--outside-month)`).first().click();
+        }
+    }
+
+    return null;
+}
 
 const emails = await getUsers();
 async function bookCourt(email: string) {
@@ -43,8 +82,10 @@ async function bookCourt(email: string) {
         const page = await context.newPage();
         // await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0");
 
+        let pregeneratedCode;
         try {
             log(`${browserType} started`, email);
+
             await page.goto("https://www.rec.us/sfrecpark");
             // await page.setViewport({width: 1920, height: 1080});
             log('on main page', email);
@@ -98,6 +139,10 @@ async function bookCourt(email: string) {
             await page.type('input[id="password"]', password);
             await page.getByText('log in & continue').click();
             log('logged in', email);
+
+            pregeneratedCode = await preGenerateCode(page, recEmail, email, password, refreshToken);
+            await page.goto("https://www.rec.us/sfrecpark");
+
 
             // navigate to court
             await page.getByText(court).click();
@@ -196,11 +241,17 @@ async function bookCourt(email: string) {
             await page.locator('button.max-w-max').click();
 
             await page.getByText('Send Code').click();
-            log('sending code', email);
-            // wait a few secs for email to come in
-            await new Promise(res => setTimeout(res, 2000));
-            const emailAccessToken = await getAccessToken(refreshToken);
-            const code = await getLatestCode(emailAccessToken, email);
+            let code;
+            if (pregeneratedCode) {
+                log('already have pregenerated code', email);
+                code = pregeneratedCode;
+            } else {
+                log('sending code', email);
+                // wait a few secs for email to come in
+                await new Promise(res => setTimeout(res, 2000));
+                const emailAccessToken = await getAccessToken(refreshToken);
+                code = await getLatestCode(emailAccessToken, email);
+            }
 
 
             // keep trying every second in case of issues
@@ -244,11 +295,15 @@ async function bookCourt(email: string) {
             }
         } finally {
             await browser.close();
+
             const videoFile = fs.readdirSync('videos/').find(file => file.endsWith('.webm') && !file.includes('attempt'));
             if (videoFile) {
                 const today = new Date();
                 fs.renameSync(`videos/${videoFile}`, `videos/${recEmail}_${today.getMonth()}-${today.getDate()}_${today.getHours()}_attempt${i}.webm`);
             }
+
+            // clean up any emails
+            await deleteCodeEmail(await getAccessToken(refreshToken), email);
         }
     }
 }
