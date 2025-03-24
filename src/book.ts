@@ -19,12 +19,13 @@ const browserType = 'chrome';
 console.log('initializing redis connection');
 await DBHelper.initializeDBConnection();
 
-async function preGenerateCode(page: Page, recEmail: string, email: string, password: string, refreshToken: string): Promise<string | null> {
+async function preGenerateCode(page: Page, email: string, refreshToken: string): Promise<string | null> {
     const unpopularCourts = ['DuPont', 'McLaren'];
     const date = new Date();
     for (let i = 0; i < unpopularCourts.length; i++) {
         const court = unpopularCourts[i];
         await page.getByText(court).click();
+        await page.waitForSelector('text=calendar')
         for (let j = 1; j < 7; j++) {
             const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
             if (times.includes(':')) {
@@ -140,7 +141,7 @@ async function bookCourt(email: string) {
             await page.getByText('log in & continue').click();
             log('logged in', email);
 
-            pregeneratedCode = await preGenerateCode(page, recEmail, email, password, refreshToken);
+            pregeneratedCode = await preGenerateCode(page, email, refreshToken);
             await page.goto("https://www.rec.us/sfrecpark");
 
 
@@ -299,7 +300,7 @@ async function bookCourt(email: string) {
             const videoFile = fs.readdirSync('videos/').find(file => file.endsWith('.webm') && !file.includes('attempt'));
             if (videoFile) {
                 const today = new Date();
-                fs.renameSync(`videos/${videoFile}`, `videos/${recEmail}_${today.getMonth()}-${today.getDate()}_${today.getHours()}_attempt${i}.webm`);
+                fs.renameSync(`videos/${videoFile}`, `videos/${recEmail}_${today.getMonth() + 1}-${today.getDate()}_${today.getHours()}_attempt${i}.webm`);
             }
 
             // clean up any emails
