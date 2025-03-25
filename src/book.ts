@@ -52,7 +52,7 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string):
             await new Promise(res => setTimeout(res, 1000));
             await page.locator('input').click();
             if (nextMonth) {
-                await page.locator('img[alt="right"]').click();
+                await page.getByRole('button', { name: 'right' }).click();
             }
             await page.locator(`.react-datepicker__day--0${date.getDate() < 10 ? '0' : ''}${date.getDate()}:not(.react-datepicker__day--outside-month)`).first().click();
         }
@@ -156,7 +156,7 @@ async function bookCourt(email: string) {
                 await page.locator('input').click();
 
                 if (nextMonth) {
-                    await page.locator('img[alt="right"]').click();
+                    await page.getByRole('button', { name: 'right' }).click();
                 }
                 // click day you want in month, pad with 0 if one digit day
                 await page.locator(`.react-datepicker__day--0${date < 10 ? '0' : ''}${date}:not(.react-datepicker__day--outside-month)`).first().click();
