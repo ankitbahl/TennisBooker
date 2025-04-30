@@ -12,7 +12,7 @@ const log = (str: string, email: string) => {
 
 // the week starts with monday, max of 3 bookings per week
 
-const bookingsDir = `${homedir}/workspace/TennisBooker/bookings`;
+const bookingsDir = `${homedir}/TennisBooker/bookings`;
 log('script started', '');
 const browserType = 'chrome';
 
