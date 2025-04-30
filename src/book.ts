@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 
 const log = (str: string, email: string) => {
     const date = new Date();
-    console.log(`${email}:${date.getDate()}/${date.getMonth() + 1},${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} - ${str}`);
+    console.log(`${email}:${date.getMonth() + 1}/${date.getDate()},${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} - ${str}`);
 }
 
 // the week starts with monday, max of 3 bookings per week
