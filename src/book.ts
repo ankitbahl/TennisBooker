@@ -25,10 +25,12 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string):
     for (let i = 0; i < unpopularCourts.length; i++) {
         const court = unpopularCourts[i];
         await page.getByText(court).click();
+        await page.waitForSelector('text=Court Reservations')
         await page.waitForSelector('text=calendar')
+        await page.waitForSelector('text=/(\\d:)|(No free)/');
         for (let j = 1; j < 7; j++) {
             const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
-            if (times.includes(':')) {
+            if (times.match(/\d:/)) {
                 const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
                 await page.getByText(time as string).click();
                 await page.getByText('Select participant').click();
