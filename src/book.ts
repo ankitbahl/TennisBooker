@@ -194,7 +194,7 @@ async function bookCourt(email: string) {
             }
 
             // create semaphore via file creation
-            const fileName = `${homedir}/workspace/TennisBooker/temp/${court}_${date}_${time}`;
+            const fileName = `${homedir}/TennisBooker/temp/${court}_${date}_${time}`;
 
             // another process has already got to this point, no need to continue
             if (existsSync(fileName)) {
