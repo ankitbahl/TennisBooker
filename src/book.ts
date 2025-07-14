@@ -29,6 +29,7 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string):
         await page.waitForSelector('text=calendar')
         await page.waitForSelector('text=/(\\d:)|(No free)/');
         for (let j = 1; j < 7; j++) {
+            await new Promise(res => setTimeout(res, 5000));
             const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
             if (times.match(/\d:/)) {
                 const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
