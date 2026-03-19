@@ -131,7 +131,7 @@ async function bookCourt(email: string) {
             }
             const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-            const defaultDays = defaultWeekBookings.map(defaultWeekBooking => defaultWeekBooking.day);
+            const defaultDays = defaultWeekBookings.filter(({enabled}) => enabled).map(defaultWeekBooking => defaultWeekBooking.day);
             const daysToBook = defaultDays.map((weekday) => {
                 return days.indexOf(weekday);
             });
