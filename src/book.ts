@@ -1,7 +1,6 @@
 import { chromium, Page } from 'playwright';
 import {deleteCodeEmail, getAccessToken, getLatestCode} from "./emailHelper.js";
-import {existsSync, readFileSync, rmSync, writeFileSync} from 'fs';
-import {homedir} from "node:os";
+import { utcToZonedTime } from 'date-fns-tz';
 import {
   DBHelper,
   getBookings,
@@ -105,19 +104,21 @@ async function bookCourt(email: string) {
             // await page.setViewport({width: 1920, height: 1080});
             log('on main page', email);
             const today = new Date();
+            const pdtToday = utcToZonedTime(today, 'America/Los_Angeles');
+            const pdtHours = pdtToday.getHours();
             let numDaysAdvance;
             let nextMonth = false;
-            if (today.getHours() === 7 || today.getHours() === 8) {
+            if (pdtHours === 7 || pdtHours === 8) {
                 // morning booking is for 7 days in advance
                 numDaysAdvance = 7;
-            } else if (today.getHours() === 11 || today.getHours() === 12) {
+            } else if (pdtHours === 11 || pdtHours === 12) {
                 numDaysAdvance = 2;
             } else {
-                numDaysAdvance = 4;
+                numDaysAdvance = 2;
             }
-            let bookDate = new Date();
-            bookDate.setDate(today.getDate() + numDaysAdvance);
-            if (bookDate.getMonth() !== today.getMonth()) {
+            let bookDate = new Date(pdtToday);
+            bookDate.setDate(pdtToday.getDate() + numDaysAdvance);
+            if (bookDate.getMonth() !== pdtToday.getMonth()) {
                 nextMonth = true;
             }
 
