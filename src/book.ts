@@ -1,8 +1,16 @@
-import {chromium, Page} from 'playwright';
+import { chromium, Page } from 'playwright';
 import {deleteCodeEmail, getAccessToken, getLatestCode} from "./emailHelper.js";
 import {existsSync, readFileSync, rmSync, writeFileSync} from 'fs';
 import {homedir} from "node:os";
-import {DBHelper, getDefaultWeekBookings, getRecEmail, getRecPassword, getToken, getUsers} from "./db_helper.js";
+import {
+  DBHelper,
+  getBookings,
+  getDefaultWeekBookings,
+  getRecEmail,
+  getRecPassword,
+  getToken,
+  getUsers, setBookings
+} from "./db_helper.js";
 import * as fs from "node:fs";
 
 const log = (str: string, email: string) => {
@@ -12,14 +20,12 @@ const log = (str: string, email: string) => {
 
 // the week starts with monday, max of 3 bookings per week
 
-const bookingsDir = `${homedir}/TennisBooker/bookings`;
 log('script started', '');
 const browserType = 'chrome';
 
 console.log('initializing redis connection');
 await DBHelper.initializeDBConnection();
-
-async function preGenerateCode(page: Page, email: string, refreshToken: string): Promise<string | null> {
+async function preGenerateCode(page: Page, email: string, refreshToken: string, bookings: { date: string }[]): Promise<string | null> {
     const unpopularCourts = ['DuPont', 'McLaren'];
     const date = new Date();
     for (let i = 0; i < unpopularCourts.length; i++) {
@@ -31,12 +37,12 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string):
         for (let j = 1; j < 7; j++) {
             await new Promise(res => setTimeout(res, 5000));
             const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
-            if (times.match(/\d:/)) {
+            if (times.match(/\d:/) && bookings.filter(booking => booking.date === date.toISOString().split('T')[0]).length == 0) {
                 const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
                 await page.getByText(time as string).click();
                 await page.getByText('Select participant').click();
                 await page.getByText('Account Owner').click();
-                await page.locator('button.max-w-max').click();
+                await page.getByRole('button', { name: 'Book' }).click();
                 await page.getByText('Send Code').click();
 
                 // wait a few secs for email to come in
@@ -53,15 +59,20 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string):
 
             // click day you want in month, pad with 0 if one digit day
             await new Promise(res => setTimeout(res, 1000));
-            await page.locator('input').click();
+            await page.locator('[aria-label="Select date"]').click();
             if (nextMonth) {
-                await page.getByRole('button', { name: 'right' }).click();
+                await page.locator('[aria-label="Go to the Next Month"]').click();
             }
-            await page.locator(`.react-datepicker__day--0${date.getDate() < 10 ? '0' : ''}${date.getDate()}:not(.react-datepicker__day--outside-month)`).first().click();
+            await page.locator(`[data-day="${date.toISOString().split('T')[0]}"]`).click();
         }
     }
 
     return null;
+}
+
+async function clearCart(page: Page) {
+    await page.getByText('Cart').click();
+    await page.locator('[aria-label="Remove item"]').click();
 }
 
 const emails = await getUsers();
@@ -70,14 +81,14 @@ async function bookCourt(email: string) {
     const defaultWeekBookings = await getDefaultWeekBookings(email);
     const recEmail = await getRecEmail(email);
     const password = await getRecPassword(email);
-
     if (!recEmail || !password) {
         log('No rec email or password found in db, terminating', email);
         return 1;
     }
-
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 1; i++) {
+        console.log('starting attempt', i);
         const browser = await chromium.launch({headless: true});
+        console.log('launched browser');
         const context = await browser.newContext({
             recordVideo: {
                 dir: 'videos/'
@@ -109,10 +120,12 @@ async function bookCourt(email: string) {
             if (bookDate.getMonth() !== today.getMonth()) {
                 nextMonth = true;
             }
-            const bookingFilePath = `${bookingsDir}/${bookDate.getMonth() + 1}-${bookDate.getDate()}.txt`;
-            if (existsSync(bookingFilePath)) {
-                log(`found booking for ${bookDate.getDate()} already for ${readFileSync(bookingFilePath)}`, email);
-                return 0;
+
+            const bookings = await getBookings(email);
+
+            if (bookings.filter(booking => booking.date === bookDate.toISOString().split('T')[0]).length > 0) {
+              log(`found booking for ${bookDate.toISOString().split('T')[0]} already`, email);
+              return 0;
             }
             const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -139,14 +152,16 @@ async function bookCourt(email: string) {
 
             // login
             await page.getByText('Log In').click();
-            await page.type('input[id="email"]', recEmail);
-            await page.type('input[id="password"]', password);
+            await page.type('input[data-testid="email"]', recEmail);
+            await page.type('input[data-testid="password"]', password);
             await page.getByText('log in & continue').click();
             log('logged in', email);
 
-            pregeneratedCode = await preGenerateCode(page, email, refreshToken);
-            await page.goto("https://www.rec.us/sfrecpark");
+            pregeneratedCode = await preGenerateCode(page, email, refreshToken, bookings);
+            await page.reload()
+            await clearCart(page);
 
+            await page.goto("https://www.rec.us/sfrecpark");
 
             // navigate to court
             await page.getByText(court).click();
@@ -156,13 +171,14 @@ async function bookCourt(email: string) {
             // wait for time to be available
             for (let i = 0; true; i++) {
                 // click on date selector
-                await page.locator('input').click();
+                await page.locator('[aria-label="Select date"]').click();
 
                 if (nextMonth) {
-                    await page.getByRole('button', { name: 'right' }).click();
+                  await page.locator('[aria-label="Go to the Next Month"]').click();
                 }
-                // click day you want in month, pad with 0 if one digit day
-                await page.locator(`.react-datepicker__day--0${date < 10 ? '0' : ''}${date}:not(.react-datepicker__day--outside-month)`).first().click();
+                // click day you want in month
+                await page.locator(`[data-day="${bookDate.toISOString().split('T')[0]}"]`).click();
+
                 log('checking available times', email);
                 // check available days for logging
                 const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
@@ -193,26 +209,6 @@ async function bookCourt(email: string) {
                 log('done refresh', email);
             }
 
-            // create semaphore via file creation
-            const fileName = `${homedir}/TennisBooker/temp/${court}_${date}_${time}`;
-
-            // another process has already got to this point, no need to continue
-            if (existsSync(fileName)) {
-                log('another process has already started the booking process, terminating', email);
-                return 0;
-            } else {
-                try {
-                    writeFileSync(fileName, '');
-                } catch (e) {
-                    log('failed to create file, terminating', email);
-                    console.error(e);
-                    return 1;
-                }
-            }
-
-            // delete file
-            rmSync(fileName);
-
             // click on time you want
             await page.getByText(time).click();
 
@@ -242,7 +238,7 @@ async function bookCourt(email: string) {
             await page.getByText('Account Owner').click();
 
             // click book
-            await page.locator('button.max-w-max').click();
+            await page.getByRole('button', { name: 'Book' }).click();
 
             await page.getByText('Send Code').click();
             let code;
@@ -263,11 +259,9 @@ async function bookCourt(email: string) {
             // type code
             log('entering code', email);
             await page.type('input[id="totp"]', code);
-
-            page.setDefaultTimeout(180000);
-            log('confirming with 3 min timeout', email);
+            await page.getByText('Continue to Payment').click();
             try {
-                await page.getByText('Confirm').last().click();
+                await page.getByText('Confirm and Pay').click();
             } catch (e) {
                 // keep trying
 
@@ -282,7 +276,8 @@ async function bookCourt(email: string) {
                 log('success!, terminating', email);
 
                 // make a file for the booking
-                writeFileSync(bookingFilePath, `${court}: ${time}`);
+                bookings.push({date: bookDate.toISOString().split('T')[0], court: court, time: time});
+                await setBookings(email, bookings);
                 return 0;
             } catch (e) {
                 console.error(e);

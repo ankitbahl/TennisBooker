@@ -53,3 +53,11 @@ export const getRecPassword = async (email: string) => {
 export const getDefaultWeekBookings = async (email: string): Promise<{day: string, court: string, time: string}[]> => {
   return (JSON.parse(await DBHelper.redisClient.get('default_week_bookings') || "{}")[email])
 }
+
+export const getBookings = async (email: string): Promise<{date: string, court: string, time: string}[]> => {
+  return JSON.parse(await DBHelper.redisClient.get(`${email}_bookings`) || "[]");
+}
+
+export const setBookings = async (email: string, bookings: {date: string, court: string, time: string}[]) => {
+  await DBHelper.redisClient.set(`${email}_bookings`, JSON.stringify(bookings));
+}
