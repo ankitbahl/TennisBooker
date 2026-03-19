@@ -1,6 +1,6 @@
 import { chromium, Page } from 'playwright';
 import {deleteCodeEmail, getAccessToken, getLatestCode} from "./emailHelper.js";
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import {
   DBHelper,
   getBookings,
@@ -104,7 +104,7 @@ async function bookCourt(email: string) {
             // await page.setViewport({width: 1920, height: 1080});
             log('on main page', email);
             const today = new Date();
-            const pdtToday = utcToZonedTime(today, 'America/Los_Angeles');
+            const pdtToday = toZonedTime(today, 'America/Los_Angeles');
             const pdtHours = pdtToday.getHours();
             let numDaysAdvance;
             let nextMonth = false;
