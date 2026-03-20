@@ -1,6 +1,6 @@
 import { chromium, Page } from 'playwright';
 import {deleteCodeEmail, getAccessToken, getLatestCode} from "./emailHelper.js";
-import { toZonedTime } from 'date-fns-tz';
+import { toZonedTime, format } from 'date-fns-tz';
 import {
   DBHelper,
   getBookings,
@@ -36,7 +36,7 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string, 
         for (let j = 1; j < 7; j++) {
             await new Promise(res => setTimeout(res, 5000));
             const times = await (await page.getByText('Tennis').first()).evaluate(el => (el.parentElement as HTMLElement).innerText);
-            if (times.match(/\d:/) && bookings.filter(booking => booking.date === date.toISOString().split('T')[0]).length == 0) {
+            if (times.match(/\d:/) && bookings.filter(booking => booking.date === format(date, 'yyyy-MM-dd', { timeZone: 'America/Los_Angeles'})).length == 0) {
                 const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
                 await page.getByText(time as string).click();
                 await page.getByText('Select participant').click();
@@ -124,9 +124,9 @@ async function bookCourt(email: string) {
             }
 
             const bookings = await getBookings(email);
-
-            if (bookings.filter(booking => booking.date === bookDate.toISOString().split('T')[0]).length > 0) {
-              log(`found booking for ${bookDate.toISOString().split('T')[0]} already`, email);
+            const formattedBookDate = format(bookDate, 'yyyy-MM-dd', {timeZone: 'America/Los_Angeles'});
+            if (bookings.filter(booking => booking.date === formattedBookDate).length > 0) {
+              log(`found booking for ${formattedBookDate} already`, email);
               return 0;
             }
             const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -178,8 +178,9 @@ async function bookCourt(email: string) {
                 if (nextMonth) {
                   await page.locator('[aria-label="Go to the Next Month"]').click();
                 }
+                console.log(formattedBookDate);
                 // click day you want in month
-                await page.locator(`[data-day="${bookDate.toISOString().split('T')[0]}"]`).click();
+                await page.locator(`[data-day="${formattedBookDate}"]`).click();
 
                 log('checking available times', email);
                 // check available days for logging
@@ -263,7 +264,7 @@ async function bookCourt(email: string) {
             await page.type('input[id="totp"]', code);
             await page.getByText('Continue to Payment').click();
             try {
-                await page.getByText('Confirm and Pay').click();
+                await page.getByRole('button', { name: 'Confirm and Pay' }).click();
             } catch (e) {
                 // keep trying
 
@@ -272,13 +273,13 @@ async function bookCourt(email: string) {
             }
 
             // if we don't get it wil say "Court already reserved at this time"
-            // if we do it will say You're all set!
+            // if we do it will say Checkout Successful
             try {
-                await page.waitForSelector("text=You're all set!");
+                await page.waitForSelector("text=Checkout Successful");
                 log('success!, terminating', email);
 
                 // make a file for the booking
-                bookings.push({date: bookDate.toISOString().split('T')[0], court: court, time: time});
+                bookings.push({date: formattedBookDate, court: court, time: time});
                 await setBookings(email, bookings);
                 return 0;
             } catch (e) {
