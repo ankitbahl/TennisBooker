@@ -269,7 +269,7 @@ async function bookCourt(email: string) {
             await page.locator(`xpath=//*[text()='Verification Code']/following-sibling::*[1]`).fill(code);
             await page.getByText('Continue to Payment').click();
             try {
-                // await page.getByRole('button', { name: 'Confirm and Pay' }).click();
+                await page.getByRole('button', { name: 'Confirm and Pay' }).click();
             } catch (e) {
                 // keep trying
 
