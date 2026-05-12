@@ -39,8 +39,12 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string, 
             if (times.match(/\d:/) && bookings.filter(booking => booking.date === format(date, 'yyyy-MM-dd', { timeZone: 'America/Los_Angeles'})).length == 0) {
                 const time = times.split("\n").find(potentialTime => potentialTime.includes(":"));
                 await page.getByText(time as string).click();
-                await page.getByText('Select participant').click();
-                await page.getByText('Account Owner').click();
+
+                const personNotSelected = await page.getByText('Select participant').isVisible();
+                if (personNotSelected) {
+                  await page.getByText('Select participant').click();
+                  await page.getByText('Account Owner').click();
+                }
                 await page.getByRole('button', { name: 'Book' }).click();
                 await page.getByText('Send Code').click();
 
@@ -216,7 +220,7 @@ async function bookCourt(email: string) {
             await page.getByText(time).click();
 
             // click on button under duration to select duration
-            await page.locator(`xpath=//label[text()='Duration']/following-sibling::button`).click();
+            await page.locator(`xpath=//*[text()='Duration']/following-sibling::*[1]`).click();
 
             // try to click each one to get the longest time
             const durations = ['2 hours', '90 min', '1 hour', '30 min']
@@ -234,11 +238,12 @@ async function bookCourt(email: string) {
                 }
             }
 
-            await page.getByText(longestAvailableDuration).first().click();
-
-            await page.getByText('Select participant').click();
-
-            await page.getByText('Account Owner').click();
+            await page.getByText(longestAvailableDuration).first().click({force: true});
+            const personNotSelected = await page.getByText('Select participant').isVisible();
+            if (personNotSelected) {
+              await page.getByText('Select participant').click();
+              await page.getByText('Account Owner').click();
+            }
 
             // click book
             await page.getByRole('button', { name: 'Book' }).click();
@@ -261,10 +266,10 @@ async function bookCourt(email: string) {
             //         page.setDefaultTimeout(10000);
             // type code
             log('entering code', email);
-            await page.type('input[id="totp"]', code);
+            await page.locator(`xpath=//*[text()='Verification Code']/following-sibling::*[1]`).fill(code);
             await page.getByText('Continue to Payment').click();
             try {
-                await page.getByRole('button', { name: 'Confirm and Pay' }).click();
+                // await page.getByRole('button', { name: 'Confirm and Pay' }).click();
             } catch (e) {
                 // keep trying
 
