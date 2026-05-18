@@ -75,7 +75,7 @@ async function preGenerateCode(page: Page, email: string, refreshToken: string, 
 
 async function clearCart(page: Page) {
     await page.getByText('Cart').click();
-    await page.locator('[aria-label="Remove item"]').click();
+    await page.locator('[aria-label*="remove" i]').click();
     await page.getByRole('button', { name: 'Remove' }).click();
 }
 
