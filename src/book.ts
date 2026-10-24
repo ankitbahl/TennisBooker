@@ -157,12 +157,18 @@ async function bookCourt(email: string) {
             log(`trying to get ${time} slot on the ${date} for ${court}`, email);
 
             // login
-            await page.getByText('Log In').click();
+            await page.getByRole('button', { name: 'Log in' }).click();
             await page.type('input[data-testid="email"]', recEmail);
             await page.type('input[data-testid="password"]', password);
-            await page.getByText('log in & continue').click();
+            await page.getByRole('button', { name: 'Log in' }).click();
             log('logged in', email);
 
+            try {
+              await page.waitForSelector('button:has-text("Deny Non-Essential")', { timeout: 5000 });
+              await page.click('button:has-text("Deny Non-Essential")');
+            } catch (error) {
+              // Popup didn't appear, continue
+            }
             pregeneratedCode = await preGenerateCode(page, email, refreshToken, bookings);
             await page.reload()
             await clearCart(page);
@@ -217,7 +223,7 @@ async function bookCourt(email: string) {
             }
 
             // click on time you want
-            await page.getByText(time).click();
+            await page.getByText(time, { exact: true }).click();
 
             // click on button under duration to select duration
             await page.locator(`xpath=//*[text()='Duration']/following-sibling::*[1]`).click();
@@ -266,7 +272,7 @@ async function bookCourt(email: string) {
             //         page.setDefaultTimeout(10000);
             // type code
             log('entering code', email);
-            await page.locator(`xpath=//*[text()='Verification Code']/following-sibling::*[1]`).fill(code);
+            await page.locator('input[autocomplete="one-time-code"]').fill(code);
             await page.getByText('Continue to Payment').click();
             try {
                 await page.getByRole('button', { name: 'Confirm and Pay' }).click();
