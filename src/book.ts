@@ -208,7 +208,7 @@ async function bookCourt(email: string) {
                 if (now.getMinutes() > 2 && now.getMinutes() < 50) {
                     log("it's too late, terminating", email);
                     return 0;
-                } else if ((now.getMinutes() > 58 && now.getSeconds() > 55) || now.getMinutes() <= 4) {
+                } else if ((now.getMinutes() > 58 && now.getSeconds() > 50) || now.getMinutes() <= 4) {
                     log('waiting 0.5s', email);
                     await new Promise(res => setTimeout(res, 500));
                 } else {
